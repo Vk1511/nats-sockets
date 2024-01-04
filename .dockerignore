@@ -1,0 +1,4 @@
+Dockerfile
+requirments.txt
+__pycache__
+.env

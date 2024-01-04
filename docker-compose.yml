@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+
+  nats-stream:
+    build:
+      context: ./
+    volumes:
+      - ./:/app:rw
+    ports:
+      - "6000:6000"
+    command:  ["python3","app.py"]
+
+  nats:
+    image: 'nats:0.8.0'
+    container_name:  nats-server
+    entrypoint: "/gnatsd -DV"
+    # command: "-c /etc/nats/nats-server.conf"
+    # volumes:
+    #   - ./volumes/nats/:/datastore
+    #   - ./volumes/nats/log/:/tmp/
+    ports:
+      - "8222:8222"
+      - "1883:1883"
+      - "4222:4222"
+    hostname: nats-server
+    restart: unless-stopped
+    networks: ["nats"]
+
+networks:
+  nats:
+    name: nats
+
+  # nats-server:
+  #     image: comaidt/nats_server:v0.1.3
+  #     container_name:  nats-server
+  #     volumes:
+  #       - ./volumes/nats/:/datastore
+  #       - ./volumes/nats/log/:/tmp/
+  #     command: "-c /etc/nats/nats-server.conf"
+  #     ports:
+  #       - "8222:8222"
+  #       - "1883:1883"
+  #       - "4222:4222"
+  #     restart: unless-stopped
+  #     hostname: nats-server
+  #     networks:
+  #       default:
+  #       zbx_net_backend:
