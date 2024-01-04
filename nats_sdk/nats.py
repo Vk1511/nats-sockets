@@ -19,7 +19,6 @@ class NatsJetstream:
             f"nats://{nats_host}", connect_timeout=3, max_reconnect_attempts=2
         )
         self.js = self.nc.jetstream()
-        print("@@@@@@@@@")
         return None
 
     def initiate_stream(self, stream_name, subjects=[]):
