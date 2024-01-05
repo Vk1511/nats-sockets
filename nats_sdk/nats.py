@@ -4,22 +4,27 @@ import json
 
 
 class NatsJetstream:
-    js = None
+    _obj = None
 
-    def connect(self):
+    def __init__(self):
+        self.url = os.environ.get("NATS_URL", "nats://localhost:4222").split(",")
+        self.connection = None
+
+    @classmethod
+    async def factory(cls):
+        if not cls._obj:
+            cls._obj = cls()
+            await cls._obj.connect()
+        return cls._obj
+
+    async def connect(self):
         """
         Connects to the NATS server.
 
         Returns:
             None
         """
-
-        nats_host = "127.0.0.1:4222"
-        self.nc = nats.connect(
-            f"nats://{nats_host}", connect_timeout=3, max_reconnect_attempts=2
-        )
-        self.js = self.nc.jetstream()
-        return None
+        self.connection = await nats.connect(servers=self.url)
 
     def initiate_stream(self, stream_name, subjects=[]):
         """
@@ -34,11 +39,11 @@ class NatsJetstream:
         """
 
         try:
-            self.js.add_stream(name=stream_name, subjects=subjects)
+            self.connection.add_stream(name=stream_name, subjects=subjects)
         except Exception as e:
             print("e",e)
 
-    def publish_event(self, subject, event_payload):
+    async def publish_event(self, subject, event_payload):
         """
         Publishes an event to the specified subject.
 
@@ -50,47 +55,33 @@ class NatsJetstream:
             None
         """
 
-        ack = self.js.publish(subject, payload=event_payload)
-
-        return None
-
+        ack = await self.connection.publish(subject, payload=event_payload)
 
 class RuleEvents:
     rule_stream = "rules"
     rule_create_subject = "rules.create"
     rule_modify_subject = "rules.modify"
-    rule_delete_subject = "rules.delete"
-    rule_test_subject = "rules.test"
-    rule_activate_subject = "rules.activate"
-    rule_deactivate_subject = "rules.deactivate"
-    rule_execution_subject = "rules.execution"
 
     @staticmethod
-    def initiate_rule_stream():
+    async def initiate_rule_stream():
         """
         Initiates the stream named rule with list of subjects.
 
         Returns:
             None
         """
-        nats_obj = NatsJetstream()
-        nats_obj.connect()
+        nats_obj = await NatsJetstream.factory()
         nats_obj.initiate_stream(
             stream_name=RuleEvents.rule_stream,
             subjects=[
                 RuleEvents.rule_create_subject,
-                RuleEvents.rule_modify_subject,
-                RuleEvents.rule_delete_subject,
-                RuleEvents.rule_test_subject,
-                RuleEvents.rule_activate_subject,
-                RuleEvents.rule_deactivate_subject,
-                RuleEvents.rule_execution_subject,
+                RuleEvents.rule_modify_subject
             ],
         )
-        nats_obj.nc.close()
+        nats_obj.connection.close()
 
     @staticmethod
-    def publish_rule_event(subject, event_data):
+    async def publish_rule_event(subject, event_data):
         """
         Publish the json data on rule stream on given subject
 
@@ -104,34 +95,12 @@ class RuleEvents:
 
         try:
             event_data = json.dumps(event_data)
-            nats_obj = NatsJetstream()
-            nats_obj.connect()
-            ack = nats_obj.js.publish(subject, event_data.encode())
+            nats_obj = await NatsJetstream.factory()
+            ack = await nats_obj.publish_event(subject, event_data.encode())
             return ack
         except Exception as e:
             print("e",e)
             # pass
         finally:
-            if nats_obj.js:
-                nats_obj.nc.close()
-
-
-def publish_key_value(payload: dict, bucket: str, key: str):
-    """Publish key value store to a Key Value Bucket
-
-    Args:
-        payload (dict): dictionary of the mesaage that needs to be added as a value.
-        bucket (str): name of thr bucket where the KV needs to be stored.
-        key (str): name of the key for the bucket that needs to be added.
-    """
-    try:
-        nats_obj = NatsJetstream()
-        nats_obj.connect()
-        kv = nats_obj.js.create_key_value(bucket=bucket)
-        # Set Key a value
-        kv.put(key, json.dumps(payload).encode())
-    except Exception as e:
-        print("ee",e)
-    finally:
-        if nats_obj.js:
-            nats_obj.nc.close()
+            if nats_obj.connection:
+                await nats_obj.connection.close()

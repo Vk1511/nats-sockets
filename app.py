@@ -1,13 +1,19 @@
 from flask import Flask, request, jsonify
 from datetime import datetime
-from nats_sdk.nats import NatsJetstream
+from nats_sdk.nats import RuleEvents
 app = Flask(__name__)
 
 @app.route("/trendingdataredis", methods=["GET"])
-def trendingdataredis():
+async def trendingdataredis():
     try:
-        nats_obj = NatsJetstream()
-        nats_obj.connect()
+        nats_obj = RuleEvents()
+        await nats_obj.publish_rule_event(
+            subject=RuleEvents.rule_create_subject,
+            event_data={
+                "rule_name": "dummy rule",
+                "name": "vishw"
+            },
+        )
         return (
             jsonify(
                 {"status": "success", "data": "data", "timestamp": datetime.now()}

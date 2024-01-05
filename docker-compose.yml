@@ -14,11 +14,11 @@ services:
   nats:
     image: 'nats:0.8.0'
     container_name:  nats-server
-    entrypoint: "/gnatsd -DV"
-    # command: "-c /etc/nats/nats-server.conf"
-    # volumes:
-    #   - ./volumes/nats/:/datastore
+    volumes:
+      - /nats.conf:/container
     #   - ./volumes/nats/log/:/tmp/
+    # command: "-c /container/nats.conf"
+    entrypoint: "/gnatsd -DV"
     ports:
       - "8222:8222"
       - "1883:1883"
@@ -30,6 +30,8 @@ services:
 networks:
   nats:
     name: nats
+
+
 
   # nats-server:
   #     image: comaidt/nats_server:v0.1.3
