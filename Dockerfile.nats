@@ -1,0 +1,5 @@
+FROM nats:alpine
+
+COPY nats.conf ws.conf
+
+CMD [ "-c", "ws.conf" ]

@@ -58,9 +58,10 @@ class NatsJetstream:
         ack = await self.connection.publish(subject, payload=event_payload)
 
 class RuleEvents:
-    rule_stream = "rules"
-    rule_create_subject = "rules.create"
-    rule_modify_subject = "rules.modify"
+    rule_stream = "rules.*"
+    # rule_create_subject = "rules.create"
+    # rule_modify_subject = "rules.modify"
+
 
     @staticmethod
     async def initiate_rule_stream():

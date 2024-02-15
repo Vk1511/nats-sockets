@@ -2,30 +2,45 @@ version: '3.8'
 
 services:
 
-  nats-stream:
-    build:
-      context: ./
-    volumes:
-      - ./:/app:rw
-    ports:
-      - "6000:6000"
-    command:  ["python3","app.py"]
+  # nats-stream:
+  #   build:
+  #     context: ./
+  #   volumes:
+  #     - ./:/app:rw
+  #   ports:
+  #     - "6000:6000"
+  #   command:  ["python3","app.py"]
 
-  nats:
-    image: 'nats:0.8.0'
-    container_name:  nats-server
-    volumes:
-      - /nats.conf:/container
-    #   - ./volumes/nats/log/:/tmp/
-    # command: "-c /container/nats.conf"
-    entrypoint: "/gnatsd -DV"
-    ports:
-      - "8222:8222"
-      - "1883:1883"
-      - "4222:4222"
-    hostname: nats-server
-    restart: unless-stopped
-    networks: ["nats"]
+  # nats:
+  #   image: 'nats:0.8.0'
+  #   # image: 'nats:alpine'
+  #   # container_name:  nats-server
+  #   volumes:
+  #     # - ./conf/nats.conf:/etc/nats/nats-server.conf
+  #     - ./nats.conf:/container
+  #   # volumes:
+  #   #   - ./conf:/container
+  #   #   - ./volumes/nats/log/:/tmp/
+  #   command: "-c /container/nats.conf"
+  #   # # command: "cat /container/nats.conf"
+  #   # entrypoint: "/gnatsd -DV"
+  #   ports:
+  #     - "8080:8080"
+  #     # - "8222:8222"
+  #     # - "1883:1883"
+  #     - "4222:4222"
+  #   hostname: nats-server
+  #   restart: unless-stopped
+  #   networks: ["nats"]
+
+  nats-ws:
+    build:
+      # context: ./Dockerfile.nats
+      context: ./
+    ports: 
+        - 443:443
+        - 4222:4222
+        - 8080:8080
 
 networks:
   nats:
