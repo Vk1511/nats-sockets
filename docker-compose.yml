@@ -41,6 +41,9 @@ services:
         - 443:443
         - 4222:4222
         - 8080:8080
+    volumes:
+      - ./nats_vol/:/datastore
+      - ./nats_vol/log/:/tmp/
 
 networks:
   nats:
