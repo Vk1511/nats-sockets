@@ -5,20 +5,22 @@ from nats.errors import TimeoutError
 import random
 from datetime import datetime, timezone
 import time
-import json
-
+import json 
 servers = os.environ.get("NATS_URL", "nats://192.168.3.171:4222").split(",")
 
 
 async def main():
 
     nc = await nats.connect(servers=servers)
-    random_value = random.uniform(0.45, 0.55)
+    random_value = random.uniform(0, 0.6)
     data = {
-        "data": {"fpi": str(random_value), "time": str(datetime.now(timezone.utc))},
-        "event": "fpi",
-        "timestamp": str(datetime.now(timezone.utc)),
-    }
+            "data": {
+                "fpi": str(random_value),
+                "time": str(datetime.now(timezone.utc))
+            },
+            "event": "fpi",
+            "timestamp": str(datetime.now(timezone.utc))
+        }
     event_data = json.dumps(data)
     await nc.publish("fpi.joe", event_data.encode())
 
@@ -29,9 +31,11 @@ async def main():
                 "id": "",
                 "message": "{1} High Current reading is {2}. Immediate action required.",
                 "message_values": ["FPI Alert:", str(round(random_value, 2))],
-                "extra": {"fpi": random_value},
+                "extra": {
+                "fpi": random_value
+                }
             },
-            "event": "Notification",
+            "event": 'Notification',
             "timestamp": str(datetime.now(timezone.utc)),
         }
         event_data = json.dumps(data)
@@ -42,7 +46,7 @@ async def main():
     #     msg = await sub.next_msg(timeout=0.1)
     # except TimeoutError:
     #     pass
-
+    
     # while True:
     #     random_value = random.uniform(0.4, 0.5)
     #     # data = {
@@ -87,8 +91,7 @@ async def main():
     # await sub.unsubscribe()
     await nc.drain()
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     while True:
         asyncio.run(main())
         print("data published")

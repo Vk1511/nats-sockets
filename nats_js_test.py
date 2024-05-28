@@ -20,7 +20,7 @@ async def main():
 
         await nats_obj.create_consumer(stream=notification_stream, subjects=consumer)
 
-        event_data = {"name": "vishw11111"}
+        event_data = {"name": "vishw111112222222"}
         ack = await nats_obj.publish_data(subject="notification_fpi.vishw", event_data=event_data, stream=notification_stream)
         # print("ack", dir(ack))
         # v = await ack.ack()

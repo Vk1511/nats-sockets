@@ -71,27 +71,30 @@ class NATSStream():
     
     async def pull_messages(self, subject, stream_name, durable_name):
         print("subject, stream_name, durable_name",subject, stream_name, durable_name)
+        # k = await self._js.consumer_info(stream = stream_name,consumer=durable_name)
         # Create a pull subscription
         sub = await self._js.pull_subscribe(subject=subject, stream=stream_name, durable=durable_name)
-    
+        print("sub@@@",sub)
         try:
             # Attempt to fetch messages with a timeout
-            print("1111111")
-            msgs = await sub.fetch(batch=10, timeout=5)  # Adjust timeout as needed
-            print("msgggggggggggggg",msgs)
+            # msgs = await sub.fetch(batch=10, timeout=5)  # Adjust timeout as needed
+            msgs = await sub.fetch()
+            print('msgs----------->',msgs)
+            print("lennnnnnnnnnnnnn",len(msgs))
             pending_msg = {
                 "kind": "pending",
                 "data": []
             }
-            print("tttttttttttttt")
             for msg in msgs:
                 print(f"Received message from {durable_name}: {msg.data.decode()}")
                 pending_msg["data"].append(json.loads(msg.data.decode()))
+                # msg._ackd = True
                 await msg.ack()
+                print("1111111111111111")
 
-            print("$$$$$$$$$$",pending_msg)
-            _ = await self.publish_data(subject=subject, event_data=pending_msg, stream=stream_name)
-            print("data pushhed")
+            # msgs1 = await sub.fetch(batch=10, timeout=5)
+            # print("bbbbbb",msgs1)
+            # _ = await self.publish_data(subject="notification_fpi.sachin", event_data=pending_msg, stream="notification_fpi")
         # except nats.errors.TimeoutError:
         #     print(f"No messages received for {durable_name} within the timeout period. Waiting for new messages...")
             # await asyncio.sleep(1)

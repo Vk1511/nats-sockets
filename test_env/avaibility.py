@@ -1,3 +1,44 @@
+# from nats_sdk.nats_sdk import NATSStream
+# import asyncio
+# import time
+# from datetime import datetime, timezone
+# import random
+
+
+# async def test():
+#     nats_obj = await NATSStream.factory()
+
+#     while True:
+#         # random_value = random.uniform(0.4, 0.5)
+#         # data = {
+#         #     "data": {
+#         #         "fpi": str(random_value),
+#         #         "time": str(datetime.now(timezone.utc))
+#         #     },
+#         #     "event": "fpi",
+#         #     "timestamp": str(datetime.now(timezone.utc))
+#         # }
+#         # await nats_obj.publish_data(subject="fpi.*", event_data=data)
+
+#         random_valueav = random.uniform(0.95, 1)
+#         data_av = {
+#             "data": {
+#                 "availability": str(random_valueav),
+#                 "time": str(datetime.now(timezone.utc))
+#             },
+#             "event": "availability",
+#             "timestamp": str(datetime.now(timezone.utc))
+#         }
+#         await nats_obj.publish_data(subject="vishw.*", event_data=data_av)
+
+#         print("-----data published-----------")
+
+#         time.sleep(20)
+
+# if __name__ == '__main__':
+#     asyncio.run(test())
+
+
 import os
 import asyncio
 import nats
@@ -13,29 +54,38 @@ servers = os.environ.get("NATS_URL", "nats://192.168.3.171:4222").split(",")
 async def main():
 
     nc = await nats.connect(servers=servers)
-    random_value = random.uniform(0.45, 0.55)
+    random_value = random.uniform(45, 55)
     data = {
-        "data": {"fpi": str(random_value), "time": str(datetime.now(timezone.utc))},
-        "event": "fpi",
+        "data": {
+            "availability": str(random_value),
+            "time": str(datetime.now(timezone.utc)),
+        },
+        "event": "availability",
         "timestamp": str(datetime.now(timezone.utc)),
     }
     event_data = json.dumps(data)
-    await nc.publish("fpi.joe", event_data.encode())
+    await nc.publish("availability.joe", event_data.encode())
 
-    if random_value > 0.5:
+    if random_value < 50:
         data = {
             "data": {
-                "type": "FPI",
+                "type": "AVAIBILITY",
                 "id": "",
-                "message": "{1} High Current reading is {2}. Immediate action required.",
-                "message_values": ["FPI Alert:", str(round(random_value, 2))],
-                "extra": {"fpi": random_value},
+                "message": "{1} Current avaibility is at {2}. Immediate action required.",
+                "message_values": [
+                    "Avaibility Alert: Low!",
+                    str(f"{round(random_value,2)}%"),
+                ],
+                "extra": {
+                    "avaibility": round(random_value, 2),
+                },
             },
             "event": "Notification",
             "timestamp": str(datetime.now(timezone.utc)),
         }
         event_data = json.dumps(data)
         await nc.publish("notification.joe", event_data.encode())
+
     # sub = await nc.subscribe("greet.*")
 
     # try:
