@@ -55,6 +55,9 @@ async def message_handler(msg):
         message = data["message"]
         current_time = datetime.now(pytz.utc)
 
+        if str(sender) == str(receiver):
+            raise Exception("sender and receiver can't be same")
+
         if not re.match(EMAIL_PATTERN, sender) or not re.match(EMAIL_PATTERN, receiver):
             raise ValueError("Invalid email format")
 
