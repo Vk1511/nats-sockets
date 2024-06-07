@@ -20,8 +20,9 @@ UTILITY_DB_CONFIG = {
 
 # Message schema template
 MESSAGE_SCHEMA = {
-    "sender": None,
+    # "receiver_id": None,
     "receiver": None,
+    "sender": None,
     "message": None,
 }
 
@@ -46,44 +47,39 @@ async def message_handler(msg):
     print("Received a message")
     try:
 
-        data = json.loads(msg.data.decode())
+        # data = json.loads(msg.data.decode())
+        data = msg.data.decode()
+        data = json.loads(data)
+
         if set(data.keys()) != set(MESSAGE_SCHEMA.keys()):
             raise ValueError("Wrong format")
 
-        sender = data["sender"]
+        # receiver_id = data["receiver_id"]
         receiver = data["receiver"]
+        sender = data["sender"]
         message = data["message"]
         current_time = datetime.now(pytz.utc)
 
-        if str(sender) == str(receiver):
-            raise Exception("sender and receiver can't be same")
-
-        if not re.match(EMAIL_PATTERN, sender) or not re.match(EMAIL_PATTERN, receiver):
-            raise ValueError("Invalid email format")
-
         async with pool.acquire() as connection:
-            await connection.execute(
-                """
-                INSERT INTO chat (sender, receiver, message_time, message, is_message_read)
-                VALUES ($1, $2, $3, $4, $5)
-                """,
-                sender,
-                receiver,
-                current_time,
-                message,
-                False,
-            )
-            nc = await nats.connect("nats://192.168.4.50:4222")
-            new_msg = {
-                "sender": sender,
-                # "receiver": receiver,
-                "message": message,
-                "time": str(current_time),
-                "first_name": "",
-                "last_name": "",
-            }
-            event_data = json.dumps(new_msg)
-            await nc.publish(f"user_messages.{receiver}", event_data.encode())
+            # sql = f"SELECT * FROM chat_user_group WHERE id = $1"
+            # user_group = await connection.fetchrow(sql, receiver_id)
+            sql = f"select * from chat_user_group where sender_email = $1 and receiver_email = $2"
+            user_group = await connection.fetchrow(sql, sender, receiver)
+
+            if user_group:
+                insert_msg_sql = f"""insert into user_chat (group_id, message, message_at) 
+                                values ('{user_group[0]}', '{str(message)}', '{current_time}')"""
+                await connection.execute(insert_msg_sql)
+
+                nc = await nats.connect("nats://192.168.4.50:4222")
+                new_msg = {
+                    "sender": user_group[1],
+                    "message": message,
+                    "time": str(current_time),
+                    "name": user_group[2],
+                }
+                event_data = json.dumps(new_msg)
+                await nc.publish(f"user_messages.{user_group[3]}", event_data.encode())
 
     except json.JSONDecodeError:
         print("Failed to decode JSON")
@@ -100,7 +96,7 @@ async def main():
         nc = await nats.connect("nats://192.168.4.50:4222")
 
         # Subscribe to the subject
-        await nc.subscribe("user_chat.*", cb=message_handler)
+        await nc.subscribe("user_chat.>", cb=message_handler)
 
         print("Listening for messages...")
         # Keep the connection alive to continue receiving messages

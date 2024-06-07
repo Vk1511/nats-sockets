@@ -84,7 +84,6 @@ async def main():
             "timestamp": str(datetime.now(timezone.utc)),
         }
         event_data = json.dumps(data)
-        print("@@@@@@@@@@@")
         await nc.publish("notification.joe", event_data.encode())
 
     # sub = await nc.subscribe("greet.*")

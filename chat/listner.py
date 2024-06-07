@@ -21,14 +21,13 @@ UTILITY_DB_CONFIG = {
 
 # Message schema template
 MESSAGE_SCHEMA = {
-    "sender": None,
-    "receiver": None,
+    "receiver_id": None,
     "message": None,
 }
 
 
 @contextmanager
-def connection_asset_v2():
+def connection_utility():
     conn = None
     cur = None
     try:
@@ -52,20 +51,19 @@ async def message_handler(msg):
         if set(data.keys()) != set(MESSAGE_SCHEMA.keys()):
             raise ValueError("Wrong format")
 
-        sender = data["sender"]
-        receiver = data["receiver"]
+        receiver_id = data["receiver_id"]
         message = data["message"]
         current_time = datetime.now(pytz.utc).isoformat()
 
-        if not re.match(EMAIL_PATTERN, sender) or not re.match(EMAIL_PATTERN, receiver):
-            raise ValueError("Invalid email format")
+        with connection_utility() as cur_utility:
+            sql = f"select * from chat_user_group where id = '{receiver_id}'"
+            cur_utility.execute(sql)
+            user_group = cur_utility.fetchone()
 
-        with connection_asset_v2() as cur:
-            sql = """
-                INSERT INTO chat (sender, receiver, message_time, message, is_message_read)
-                VALUES (%s, %s, %s, %s, %s)
-            """
-            cur.execute(sql, (sender, receiver, current_time, message, False))
+            if user_group:
+                insert_msg_sql = f"""insert into user_chat (group_id, message, message_at) 
+                                values ('{user_group[0]}', '{str(message)}', '{current_time}')"""
+                cur_utility.execute(insert_msg_sql)
     except json.JSONDecodeError:
         print("Failed to decode JSON")
     except ValueError as e:
